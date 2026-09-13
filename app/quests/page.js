@@ -17,7 +17,7 @@ const STATUS = [
   { value: "active", label: "Active" },
   { value: "scheduled", label: "Scheduled" },
   { value: "overdue", label: "Overdue" },
-  { value: "done", label: "Done" },
+  { value: "completed", label: "Done" },
   { value: "all", label: "All" },
 ];
 const DIFFS = ["All", "E", "D", "C", "B", "S"];
