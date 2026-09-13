@@ -72,7 +72,7 @@ export default function Home() {
           </Link>
           <span style={{ flex: 1 }} />
           <Link href="#loop" className="muted small" style={{ textDecoration: "none" }}>The loop</Link>
-          <Link href="#start" className="btn btn-sm">Sign in</Link>
+          <Link href="#start" className="lbtn lbtn-ghost lbtn-sm">Sign in</Link>
         </div>
       </header>
 
@@ -114,8 +114,8 @@ export default function Home() {
               attributes, streaks. Miss days and it notices that too.
             </p>
             <div className="hero-cta">
-              <Link href="#start" className="btn btn-primary">Create your character <ArrowRight aria-hidden="true" /></Link>
-              <Link href="/dashboard" className="btn">Enter HQ</Link>
+              <Link href="#start" className="lbtn lbtn-jade">Create your character <ArrowRight aria-hidden="true" /></Link>
+              <Link href="/dashboard" className="lbtn lbtn-ghost">Enter HQ</Link>
             </div>
             <div className="hero-proof">
               <div><strong className="num">{ATTRIBUTES.length}</strong><span>Trainable attributes</span></div>

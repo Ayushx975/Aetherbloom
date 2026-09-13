@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Coins, Lock, Check, TriangleAlert, Gem } from "lucide-react";
 import AppShell from "@/components/AppShell";
-import { Card, SectionHead, EmptyState, Dialog, Toast, Skeleton, Segmented } from "@/components/ui";
+import { SectionHead, EmptyState, Skeleton, Segmented } from "@/components/ui";
+import { LiquidGlassPanel, LiquidButton, RewardToast, LiquidModal } from "@/components/liquid";
 import { SceneErrorBoundary, ChamberFallback } from "@/components/three/PowerCoreScene";
 
 const ItemPreview = dynamic(
@@ -157,7 +158,7 @@ export default function Vault() {
         <p>Cosmetic upgrades earned with coins. Higher levels unlock higher rarities.</p>
       </div>
 
-      <Card className="card-pad" style={{ marginBottom: 16 }}>
+      <LiquidGlassPanel className="glass-pad" style={{ marginBottom: 16 }}>
         <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div className="row">
             <span className="stat-pill gold"><Coins aria-hidden="true" /><span className="num">{profile.coins} coins</span></span>
@@ -165,14 +166,14 @@ export default function Vault() {
           </div>
           <Segmented label="Filter by category" value={type} onChange={setType} options={TYPES.map((t) => ({ value: t, label: t === "All" ? "All" : `${t}s` }))} />
         </div>
-      </Card>
+      </LiquidGlassPanel>
 
       {error && <p className="field-error" role="alert" style={{ marginBottom: 12 }}>{error}</p>}
 
       {items.length === 0 ? (
-        <Card className="card-pad">
+        <LiquidGlassPanel className="glass-pad">
           <EmptyState icon={<Gem aria-hidden="true" />} title="Nothing in this category" body="Try a different category to browse the full collection." />
-        </Card>
+        </LiquidGlassPanel>
       ) : (
         <div className="vault-grid">
           {items.map((item) => {
@@ -182,21 +183,22 @@ export default function Vault() {
             const levelGated = profile.level < item.unlockLevel;
             const afford = profile.coins >= item.price;
             return (
-              <Card key={item.id} className={`card-pad rarity-${item.rarity}`} hover>
+              <LiquidGlassPanel key={item.id} className={`vault-card rarity-${item.rarity}`} grain>
                 <button type="button" className="preview-btn" onClick={() => setInspectId(item.id)} aria-label={`Inspect ${item.name} in 3D`}>
-                <div className="item-preview" aria-hidden="true">
+                <div className="vault-stage" aria-hidden="true">
+                  <span className="rarity-aura" />
                   {item.type === "Title" ? (
-                    <span className="display" style={{ fontSize: 23, padding: "0 18px", textAlign: "center" }}>{item.name}</span>
+                    <span className="display vault-glyph" style={{ fontSize: 23, padding: "0 18px", textAlign: "center", position: "relative" }}>{item.name}</span>
                   ) : item.type === "Frame" ? (
-                    <span className="avatar lg gold-frame">A</span>
+                    <span className="avatar lg gold-frame" style={{ position: "relative" }}>A</span>
                   ) : item.type === "Theme" ? (
-                    <span className="row" style={{ gap: 10 }}>
-                      <i style={{ width: 26, height: 26, borderRadius: "50%", background: item.id === "theme-crimson" ? "#e0656c" : "var(--accent)" }} />
+                    <span className="row" style={{ gap: 10, position: "relative" }}>
+                      <i style={{ width: 26, height: 26, borderRadius: "50%", background: item.id === "theme-crimson" ? "#e0656c" : "var(--accent)", boxShadow: "0 4px 12px rgba(0,0,0,.5)" }} />
                       <i style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--surface-3)", border: "1px solid var(--border-strong)" }} />
-                      <i style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--reward)" }} />
+                      <i style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--reward)", boxShadow: "0 4px 12px rgba(0,0,0,.5)" }} />
                     </span>
                   ) : (
-                    <span className="halo"><Icon /></span>
+                    <span className="halo vault-glyph" style={{ position: "relative" }}><Icon size={56} /></span>
                   )}
                   <span className="item-state">
                     {equipped ? <span className="chip green">Equipped</span>
@@ -215,49 +217,50 @@ export default function Vault() {
                   <div className="row">
                     <span className="chip green"><Check size={12} aria-hidden="true" /> Active</span>
                     <span style={{ flex: 1 }} />
-                    <button className="btn btn-sm" onClick={() => equip(item, false)}>Unequip</button>
+                    <LiquidButton size="sm" onClick={() => equip(item, false)}>Unequip</LiquidButton>
                   </div>
                 ) : has ? (
-                  <button className="btn btn-block" onClick={() => equip(item, true)}>Equip</button>
+                  <LiquidButton variant="jade" block onClick={() => equip(item, true)}>Equip</LiquidButton>
                 ) : levelGated ? (
-                  <button className="btn btn-block" disabled title={`Reach level ${item.unlockLevel} to unlock`}><Lock aria-hidden="true" /> Requires level {item.unlockLevel}</button>
+                  <LiquidButton block disabled title={`Reach level ${item.unlockLevel} to unlock`}><Lock aria-hidden="true" /> Requires level {item.unlockLevel}</LiquidButton>
                 ) : (
-                  <button
-                    className="btn btn-reward btn-block"
+                  <LiquidButton
+                    variant="gold"
+                    block
                     onClick={() => (afford ? setConfirmId(item.id) : setDenied(item))}
                   >
                     Acquire · <span className="num">{item.price}</span> <Coins size={14} aria-hidden="true" />
-                  </button>
+                  </LiquidButton>
                 )}
-              </Card>
+              </LiquidGlassPanel>
             );
           })}
         </div>
       )}
 
       {inspectItem && (
-        <Dialog
+        <LiquidModal
           title={inspectItem.name}
           onClose={() => setInspectId(null)}
           wide
           actions={
             inspectEquipped ? (
               <>
-                <button className="btn" onClick={() => setInspectId(null)}>Close</button>
-                <button className="btn" onClick={() => { equip(inspectItem, false); setInspectId(null); }}>Unequip</button>
+                <button className="lbtn lbtn-ghost" onClick={() => setInspectId(null)}>Close</button>
+                <button className="lbtn lbtn-ghost" onClick={() => { equip(inspectItem, false); setInspectId(null); }}>Unequip</button>
               </>
             ) : inspectOwned ? (
               <>
-                <button className="btn" onClick={() => setInspectId(null)}>Close</button>
-                <button className="btn btn-primary" onClick={() => { equip(inspectItem, true); setInspectId(null); }} autoFocus>Equip</button>
+                <button className="lbtn lbtn-ghost" onClick={() => setInspectId(null)}>Close</button>
+                <button className="lbtn lbtn-jade" onClick={() => { equip(inspectItem, true); setInspectId(null); }} autoFocus>Equip</button>
               </>
             ) : inspectGated ? (
-              <button className="btn" onClick={() => setInspectId(null)} autoFocus>Close</button>
+              <button className="lbtn lbtn-ghost" onClick={() => setInspectId(null)} autoFocus>Close</button>
             ) : (
               <>
-                <button className="btn" onClick={() => setInspectId(null)}>Close</button>
+                <button className="lbtn lbtn-ghost" onClick={() => setInspectId(null)}>Close</button>
                 <button
-                  className="btn btn-reward"
+                  className="lbtn lbtn-gold"
                   onClick={() => { setInspectId(null); if (inspectAfford) setConfirmId(inspectItem.id); else setDenied(inspectItem); }}
                   autoFocus
                 >
@@ -282,57 +285,57 @@ export default function Vault() {
             {inspectGated && <span className="chip">Unlocks at level {inspectItem.unlockLevel}</span>}
           </p>
           <p>{inspectItem.desc} Costs <strong className="num">{inspectItem.price} coins</strong> — you hold <strong className="num">{profile.coins}</strong>. Drag the preview to inspect it.</p>
-        </Dialog>
+        </LiquidModal>
       )}
 
       {confirmItem && (
-        <Dialog
+        <LiquidModal
           title={`Acquire ${confirmItem.name}?`}
           onClose={() => setConfirmId(null)}
           actions={
             <>
-              <button className="btn" onClick={() => setConfirmId(null)}>Cancel</button>
-              <button className="btn btn-reward" onClick={() => buy(confirmItem)} autoFocus>
+              <button className="lbtn lbtn-ghost" onClick={() => setConfirmId(null)}>Cancel</button>
+              <button className="lbtn lbtn-gold" onClick={() => buy(confirmItem)} autoFocus>
                 Confirm · <span className="num">{confirmItem.price}</span> coins
               </button>
             </>
           }
         >
           <p>Balance after purchase: <strong className="num">{profile.coins - confirmItem.price} coins</strong>. {confirmItem.desc}</p>
-        </Dialog>
+        </LiquidModal>
       )}
 
       {acquired && (
-        <Dialog
+        <LiquidModal
           title="Added to your inventory"
           onClose={() => setAcquired(null)}
           actions={
             <>
-              <button className="btn" onClick={() => setAcquired(null)}>Later</button>
-              <button className="btn btn-primary" onClick={() => equip(acquired, true)} autoFocus>Equip now</button>
+              <button className="lbtn lbtn-ghost" onClick={() => setAcquired(null)}>Later</button>
+              <button className="lbtn lbtn-jade" onClick={() => equip(acquired, true)} autoFocus>Equip now</button>
             </>
           }
         >
           <p><strong>{acquired.name}</strong> ({acquired.type} · {RARITY_LABEL[acquired.rarity]}) is yours. Equip it to show it on your profile.</p>
-        </Dialog>
+        </LiquidModal>
       )}
 
       {denied && (
-        <Dialog
+        <LiquidModal
           title="Not enough coins"
           onClose={() => setDenied(null)}
           actions={
             <>
-              <button className="btn" onClick={() => setDenied(null)}>Close</button>
-              <Link href="/quests" className="btn btn-primary" onClick={() => setDenied(null)}>Earn coins</Link>
+              <button className="lbtn lbtn-ghost" onClick={() => setDenied(null)}>Close</button>
+              <Link href="/quests" className="lbtn lbtn-jade" onClick={() => setDenied(null)}>Earn coins</Link>
             </>
           }
         >
           <p><strong>{denied.name}</strong> costs <strong className="num">{denied.price} coins</strong> and you hold <strong className="num">{profile.coins}</strong>. S-rank quests pay up to 160 coins each.</p>
-        </Dialog>
+        </LiquidModal>
       )}
 
-      {toast && <Toast icon={<Check aria-hidden="true" />}>{toast}</Toast>}
+      {toast && <RewardToast icon={<Check aria-hidden="true" />}>{toast}</RewardToast>}
     </AppShell>
   );
 }

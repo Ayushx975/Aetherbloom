@@ -6,6 +6,7 @@ import {
   ChevronsLeft, LogOut, Flame, Coins, Zap, Settings,
 } from "lucide-react";
 import { xpForLevel, displayNameOf } from "@/lib/gameLogic";
+import { BottomNav } from "@/components/liquid";
 
 const NAV = [
   { href: "/dashboard", key: "hq", label: "HQ", icon: LayoutDashboard },
@@ -174,17 +175,10 @@ export default function AppShell({ active, title, user, profile, missions = [], 
           {children}
         </main>
 
-        <nav className="bottomnav" aria-label="Primary mobile">
-          {NAV.map((n) => {
-            const Icon = n.icon;
-            return (
-              <Link key={n.key} href={n.href} aria-current={active === n.key ? "page" : undefined}>
-                <Icon aria-hidden="true" />
-                {n.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <BottomNav
+          active={active}
+          items={NAV.map((n) => ({ ...n, badge: n.badge ? n.badge(ctx) : null }))}
+        />
       </div>
     </div>
   );

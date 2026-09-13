@@ -113,7 +113,33 @@ function AetherHeart({ level, progress, rankColor, pulse, reducedMotion }) {
     <group position={[0, 1.5, 0]}>
       <mesh ref={inner} castShadow>
         <icosahedronGeometry args={[0.62, 1]} />
-        <meshStandardMaterial color="#3a2c12" emissive={rankColor} emissiveIntensity={1.35} roughness={0.3} metalness={0.4} />
+        <meshPhysicalMaterial
+          color={rankColor}
+          emissive={rankColor}
+          emissiveIntensity={1.5}
+          roughness={0.06}
+          metalness={0.15}
+          clearcoat={1}
+          clearcoatRoughness={0.08}
+          transparent
+          opacity={0.96}
+        />
+      </mesh>
+      {/* liquid light shell — glossy translucent layer over the core */}
+      <mesh scale={s * 1.24}>
+        <icosahedronGeometry args={[0.62, 0]} />
+        <meshPhysicalMaterial
+          color="#e6fff6"
+          transparent
+          opacity={0.16}
+          roughness={0}
+          metalness={0}
+          clearcoat={1}
+          clearcoatRoughness={0}
+          emissive={rankColor}
+          emissiveIntensity={0.35}
+          depthWrite={false}
+        />
       </mesh>
       <mesh ref={shell} scale={1.5}>
         <octahedronGeometry args={[0.62, 0]} />
@@ -398,6 +424,102 @@ function Rig({ reducedMotion, interactive, focus }) {
   return null;
 }
 
+// The Atlas Keeper: an original faceless celestial explorer hologram.
+// Built only from primitive geometry — flowing mantle, dark glass hood with
+// no face, and a small Aether Heart crystal at the chest. Tint follows the
+// player's theme/cosmetics; regalia grows with rank.
+function AtlasKeeper({ accent = "#72e6d1", rank = 1, reducedMotion = false }) {
+  const group = useRef();
+  const heart = useRef();
+  const ring = useRef();
+
+  useFrame((state, dt) => {
+    const t = state.clock.elapsedTime;
+    if (!reducedMotion && group.current) {
+      group.current.position.y = 0.5 + Math.sin(t * 0.9) * 0.05;
+      group.current.rotation.y = Math.sin(t * 0.22) * 0.35 - 0.5;
+    }
+    if (heart.current) {
+      const k = 1 + (reducedMotion ? 0 : Math.sin(t * 2.2) * 0.08);
+      heart.current.scale.setScalar(k);
+      heart.current.rotation.y += reducedMotion ? 0 : dt * 1.2;
+    }
+    if (ring.current && !reducedMotion) ring.current.rotation.z += dt * 0.3;
+  });
+
+  const tall = 1 + Math.min(6, rank) * 0.02;
+  return (
+    <group position={[2.65, 0.5, 1.35]} scale={tall}>
+      <group ref={group}>
+        {/* hologram base ring */}
+        <mesh ref={ring} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.34, 0.42, 40]} />
+          <meshBasicMaterial color={accent} transparent opacity={0.55} side={THREE.DoubleSide} />
+        </mesh>
+        {/* flowing mantle */}
+        <mesh position={[0, 0.62, 0]}>
+          <coneGeometry args={[0.42, 1.15, 24, 1, true]} />
+          <meshPhysicalMaterial
+            color={accent}
+            transparent
+            opacity={0.34}
+            roughness={0.15}
+            metalness={0}
+            clearcoat={1}
+            emissive={accent}
+            emissiveIntensity={0.28}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+        {/* hood — dark glass, deliberately faceless */}
+        <mesh position={[0, 1.22, 0]}>
+          <sphereGeometry args={[0.21, 24, 18]} />
+          <meshPhysicalMaterial color="#0c1420" roughness={0.05} metalness={0.3} clearcoat={1} transparent opacity={0.92} />
+        </mesh>
+        {/* inner hood glow where a face would be */}
+        <mesh position={[0, 1.2, 0.1]}>
+          <sphereGeometry args={[0.11, 18, 14]} />
+          <meshBasicMaterial color={accent} transparent opacity={0.75} />
+        </mesh>
+        {/* Aether Heart held at the chest */}
+        <mesh ref={heart} position={[0, 0.86, 0.2]}>
+          <octahedronGeometry args={[0.11, 0]} />
+          <meshPhysicalMaterial
+            color="#eafff8"
+            emissive={accent}
+            emissiveIntensity={2.2}
+            roughness={0}
+            clearcoat={1}
+            transparent
+            opacity={0.95}
+          />
+        </mesh>
+        <pointLight position={[0, 0.9, 0.35]} color={accent} intensity={3.2} distance={4} />
+        {/* rank regalia: shoulder motes + high-rank halo */}
+        {rank >= 3 && (
+          <>
+            <mesh position={[-0.3, 1.02, 0]}>
+              <sphereGeometry args={[0.045, 12, 10]} />
+              <meshBasicMaterial color={accent} transparent opacity={0.85} />
+            </mesh>
+            <mesh position={[0.3, 1.02, 0]}>
+              <sphereGeometry args={[0.045, 12, 10]} />
+              <meshBasicMaterial color={accent} transparent opacity={0.85} />
+            </mesh>
+          </>
+        )}
+        {rank >= 6 && (
+          <mesh position={[0, 1.5, 0]} rotation={[Math.PI / 2.4, 0, 0]}>
+            <torusGeometry args={[0.34, 0.012, 10, 48]} />
+            <meshBasicMaterial color="#f4d06f" transparent opacity={0.6} />
+          </mesh>
+        )}
+      </group>
+    </group>
+  );
+}
+
 // Native hover listener on the real canvas element: slows chamber time so
 // orbiting nodes can be inspected precisely. (R3F Canvas does not reliably
 // forward DOM hover props, so this bypasses that entirely.)
@@ -438,6 +560,7 @@ export function PowerCoreScene({
   onNodeSelect,
   focus = [0, 1, 0],
   autoRotate = true,
+  keeperAccent = "#72e6d1",
 }) {
   const [paused, setPaused] = useState(false);
   const m = MOODS[mood] || MOODS.dawn;
@@ -469,6 +592,7 @@ export function PowerCoreScene({
       <Grove blooms={blooms} reducedMotion={reducedMotion} />
       <BiomePads counts={biomeCounts} />
       <AetherHeart level={level} progress={progress} rankColor={rankColor} pulse={pulse} reducedMotion={reducedMotion} />
+      <AtlasKeeper accent={keeperAccent} rank={level} reducedMotion={reducedMotion} />
       <QuestNodes nodes={nodes} onHover={onNodeHover} onSelect={onNodeSelect} interactive={interactive} paused={paused} />
       {transfer && (
         <Wisp

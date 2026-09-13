@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, Lock, Gem, CircleCheck, TriangleAlert } from "lucide-react";
 import AppShell from "@/components/AppShell";
-import { Card, SectionHead, Progress, Avatar, EmptyState, Skeleton } from "@/components/ui";
+import { SectionHead, Progress, Avatar, EmptyState, Skeleton } from "@/components/ui";
+import { LiquidGlassPanel } from "@/components/liquid";
 import { ACHIEVEMENT_ICONS, GEAR_ICONS } from "@/components/icons";
 import { store } from "@/lib/store";
 import {
@@ -83,7 +84,7 @@ export default function Profile() {
         <p>Everything the system knows about your journey.</p>
       </div>
 
-      <Card className="card-pad" style={{ marginBottom: 16 }}>
+      <LiquidGlassPanel className="glass-pad" style={{ marginBottom: 16 }}>
         <div className="row" style={{ alignItems: "flex-start", gap: 18, flexWrap: "wrap" }}>
           <span className={profile.active_aura === "aura-blue" ? "aura-blue" : profile.active_aura === "aura-shadow" ? "aura-shadow" : undefined}>
             <Avatar name={heroName} size="lg" frameGold={profile.active_aura === "frame-gold"} />
@@ -108,11 +109,11 @@ export default function Profile() {
             ))}
           </div>
         </div>
-      </Card>
+      </LiquidGlassPanel>
 
       <div className="dash">
         <div className="stack">
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Rank ladder" />
             <ul className="list-plain small">
               {RANK_LADDER.map((r) => {
@@ -131,9 +132,9 @@ export default function Profile() {
                 );
               })}
             </ul>
-          </Card>
+          </LiquidGlassPanel>
 
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Attributes & skills" />
             {ATTRIBUTES.map((a) => (
               <div key={a} style={{ marginBottom: 10 }}>
@@ -152,12 +153,12 @@ export default function Profile() {
                 </div>
               ))}
             </div>
-          </Card>
+          </LiquidGlassPanel>
 
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="History" />
             {feed.length === 0 ? (
-              <EmptyState icon={<CircleCheck aria-hidden="true" />} title="No history yet" body="Complete quests to build your record." action={<Link href="/quests" className="btn btn-sm">Go to quests</Link>} />
+              <EmptyState icon={<CircleCheck aria-hidden="true" />} title="No history yet" body="Complete quests to build your record." action={<Link href="/quests" className="lbtn lbtn-ghost lbtn-sm">Go to quests</Link>} />
             ) : (
               <ul className="list-plain small">
                 {feed.map((f) => (
@@ -171,11 +172,11 @@ export default function Profile() {
                 ))}
               </ul>
             )}
-          </Card>
+          </LiquidGlassPanel>
         </div>
 
         <div className="stack">
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title={`Achievements · ${unlockedCount}/${achievements.length}`} />
             <div className="grid grid-2" style={{ gap: 10 }}>
               {achievements.map((a) => {
@@ -193,12 +194,12 @@ export default function Profile() {
                 );
               })}
             </div>
-          </Card>
+          </LiquidGlassPanel>
 
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title={`Equipment · ${owned.length} owned`} action={<Link href="/shop" className="link">Open vault</Link>} />
             {owned.length === 0 ? (
-              <EmptyState icon={<Gem aria-hidden="true" />} title="Vault is empty" body="Earn coins from quests and acquire your first upgrade." action={<Link href="/shop" className="btn btn-sm">Browse vault</Link>} />
+              <EmptyState icon={<Gem aria-hidden="true" />} title="Vault is empty" body="Earn coins from quests and acquire your first upgrade." action={<Link href="/shop" className="lbtn lbtn-ghost lbtn-sm">Browse vault</Link>} />
             ) : (
               <ul className="list-plain small">
                 {SHOP_ITEMS.filter((i) => owned.includes(i.id)).map((i) => {
@@ -214,7 +215,7 @@ export default function Profile() {
                 })}
               </ul>
             )}
-          </Card>
+          </LiquidGlassPanel>
         </div>
       </div>
     </AppShell>

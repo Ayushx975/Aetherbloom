@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Pencil, Trash2, Target, CircleCheck, TriangleAlert, X } from "lucide-react";
 import AppShell from "@/components/AppShell";
-import { Card, SectionHead, EmptyState, Dialog, Toast, Skeleton, Segmented } from "@/components/ui";
+import { SectionHead, EmptyState, Skeleton, Segmented } from "@/components/ui";
 import RankUpDialog from "@/components/RankUpDialog";
+import { LiquidGlassPanel, RewardToast, LiquidModal } from "@/components/liquid";
 import { store } from "@/lib/store";
 import {
   DIFFICULTY, ATTRIBUTE_MAP, completeMission, questStatus,
@@ -221,7 +222,7 @@ export default function Quests() {
           <h1>Quests</h1>
           <p>Create ranked work, complete it for XP and coins, and keep the streak alive.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)} aria-expanded={showForm}>
+        <button className="lbtn lbtn-jade" onClick={() => setShowForm((s) => !s)} aria-expanded={showForm}>
           {showForm ? <><X aria-hidden="true" /> Close form</> : <><Plus aria-hidden="true" /> New quest</>}
         </button>
       </div>
@@ -229,7 +230,7 @@ export default function Quests() {
       {error && <p className="field-error" role="alert" style={{ marginBottom: 12 }}>{error}</p>}
 
       {showForm && (
-        <Card className="card-pad" style={{ marginBottom: 16 }}>
+        <LiquidGlassPanel className="glass-pad" style={{ marginBottom: 16 }}>
           <SectionHead title="New quest" />
           <form onSubmit={addMission} aria-label="Create quest">
             <div className="field">
@@ -261,12 +262,12 @@ export default function Quests() {
               <label htmlFor="q-desc">Briefing <span className="muted">(optional)</span></label>
               <textarea id="q-desc" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Acceptance criteria, links, notes…" />
             </div>
-              <button className="btn btn-primary" type="submit">Accept quest</button>
+              <button className="lbtn lbtn-jade" type="submit">Accept quest</button>
           </form>
-        </Card>
+        </LiquidGlassPanel>
       )}
 
-      <Card className="card-pad" style={{ marginBottom: 16 }}>
+      <LiquidGlassPanel className="glass-pad" style={{ marginBottom: 16 }}>
         <div className="form-row cols-2" style={{ marginBottom: 12 }}>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="q-search">Search</label>
@@ -283,23 +284,23 @@ export default function Quests() {
           <Segmented label="Filter by status" value={status} onChange={setStatus} options={STATUS} />
           <Segmented label="Filter by difficulty" value={diff} onChange={setDiff} options={DIFFS.map((d) => ({ value: d, label: d === "All" ? "Any rank" : `${d}-rank` }))} />
         </div>
-      </Card>
+      </LiquidGlassPanel>
 
       {visible.length === 0 ? (
-        <Card className="card-pad">
+        <LiquidGlassPanel className="glass-pad">
           <EmptyState
             icon={<Target aria-hidden="true" />}
             title={missions.length === 0 ? "No quests yet" : "No matches"}
             body={missions.length === 0 ? "Create your first quest to start earning XP." : "Loosen the filters to see more quests."}
-            action={missions.length === 0 ? <button className="btn btn-primary" onClick={() => setShowForm(true)}><Plus aria-hidden="true" /> New quest</button> : undefined}
+            action={missions.length === 0 ? <button className="lbtn lbtn-jade" onClick={() => setShowForm(true)}><Plus aria-hidden="true" /> New quest</button> : undefined}
           />
-        </Card>
+        </LiquidGlassPanel>
       ) : (
         <ul className="list-plain">
           <AnimatePresence initial={false}>
             {visible.map((m) => (
               <motion.li key={m.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className={`check ${m.status === "done" ? "done" : ""}`}>
+                <div className={`glass check ${m.status === "done" ? "done" : ""}`} style={{ borderRadius: 16, marginBottom: 10 }}>
                   <input
                     type="checkbox" checked={m.status === "done"}
                     onChange={() => (m.status === "done" ? onReopen(m) : onComplete(m))}
@@ -310,8 +311,8 @@ export default function Quests() {
                     {editingId === m.id ? (
                       <span className="row">
                         <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} aria-label="Quest title" style={{ flex: 1 }} maxLength={120} />
-                        <button className="btn btn-sm btn-primary" onClick={() => saveEdit(m.id)}>Save</button>
-                        <button className="btn btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
+                        <button className="lbtn lbtn-jade lbtn-sm" onClick={() => saveEdit(m.id)}>Save</button>
+                        <button className="lbtn lbtn-ghost lbtn-sm" onClick={() => setEditingId(null)}>Cancel</button>
                       </span>
                     ) : (
                       <>
@@ -345,13 +346,13 @@ export default function Quests() {
       )}
 
       {deleteTarget && (
-        <Dialog
+        <LiquidModal
           title="Abandon this quest?"
           onClose={() => setDeleteId(null)}
-          actions={<><button className="btn" onClick={() => setDeleteId(null)}>Keep it</button><button className="btn btn-danger" onClick={onDelete} autoFocus>Abandon quest</button></>}
+          actions={<><button className="lbtn lbtn-ghost" onClick={() => setDeleteId(null)}>Keep it</button><button className="lbtn lbtn-danger" onClick={onDelete} autoFocus>Abandon quest</button></>}
         >
           <p><strong>{deleteTarget.title}</strong> will be removed permanently. Completed history for other quests is unaffected.</p>
-        </Dialog>
+        </LiquidModal>
       )}
       {dialog?.kind === "levelup" && (
         <RankUpDialog
@@ -364,15 +365,15 @@ export default function Quests() {
         />
       )}
       {dialog?.kind === "penalty" && (
-        <Dialog
+        <LiquidModal
           title="Streak reset"
           onClose={() => setDialog(null)}
-          actions={<button className="btn btn-primary" onClick={() => setDialog(null)} autoFocus>Rebuild it today</button>}
+          actions={<button className="lbtn lbtn-jade" onClick={() => setDialog(null)} autoFocus>Rebuild it today</button>}
         >
           <p>You missed a day, so the streak restarted at 1 and 20 coins were deducted.</p>
-        </Dialog>
+        </LiquidModal>
       )}
-      {toast && <Toast icon={<CircleCheck aria-hidden="true" />}>{toast}</Toast>}
+      {toast && <RewardToast icon={<CircleCheck aria-hidden="true" />}>{toast}</RewardToast>}
     </AppShell>
   );
 }

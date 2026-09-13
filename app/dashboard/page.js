@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import AppShell from "@/components/AppShell";
-import { Card, SectionHead, Progress, Avatar, EmptyState, Dialog, Toast, Skeleton } from "@/components/ui";
+import { SectionHead, Progress, EmptyState, Skeleton } from "@/components/ui";
+import { LiquidGlassPanel, LiquidButton, StatGauge, QuestCard, RewardToast, LiquidModal } from "@/components/liquid";
 import CountUp from "@/components/CountUp";
 import RankUpDialog from "@/components/RankUpDialog";
 import RadarChart from "@/components/RadarChart";
@@ -219,6 +220,11 @@ export default function Dashboard() {
     }
   })();
   const mood = profile.active_theme === "theme-crimson" ? "dusk" : recoveryMode ? "dusk" : (profile.streak || 0) >= 5 ? "day" : "dawn";
+  // Atlas Keeper tint reacts to equipped cosmetics / theme.
+  const keeperAccent = profile.active_theme === "theme-crimson" ? "#e0656c"
+    : profile.active_aura === "aura-blue" ? "#8fa8f8"
+    : profile.active_aura === "aura-shadow" ? "#a98be8"
+    : profile.active_aura === "frame-gold" ? "#f6b75f" : "#72e6d1";
   const chamberNodes = active.slice(0, 8).map((m) => {
     const bAttr = ATTRIBUTE_MAP[m.category] || "INT";
     const biome = BIOMES.find((x) => x.attr === bAttr);
@@ -240,11 +246,11 @@ export default function Dashboard() {
       )}
       {error && <p className="field-error" role="alert" style={{ marginBottom: 12 }}>{error}</p>}
 
-      {/* Command chamber — live 3D */}
-      <Card style={{ marginBottom: 16, overflow: "hidden" }}>
-        <div className="row" style={{ justifyContent: "space-between", padding: "14px 20px 0", gap: 12, flexWrap: "wrap" }}>
+      {/* Command chamber — large hero stage with glass HUD overlay */}
+      <LiquidGlassPanel featured grain style={{ marginBottom: 16 }} className="hq-hero">
+        <div className="row" style={{ justifyContent: "space-between", padding: "16px 20px 0", gap: 12, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>
-            <p className="eyebrow" style={{ marginBottom: 2 }}>Living atlas</p>
+            <p className="eyebrow" style={{ marginBottom: 2 }}>Living atlas · command chamber</p>
             <p className="small muted" style={{ margin: 0 }}>
               {hoverNode
                 ? `${hoverNode.difficulty}-rank · ${hoverNode.title} — select to open quests`
@@ -260,7 +266,7 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-        <div style={{ height: small ? 280 : 380, position: "relative" }}>
+        <div className="hq-stage">
           <SceneErrorBoundary fallback={<div style={{ height: "100%", padding: 20 }}><ChamberFallback /></div>}>
             {fx ? (
               <Chamber
@@ -280,39 +286,48 @@ export default function Dashboard() {
                 dense={resolveDense(quality, small, reduced)}
                 onNodeHover={setHoverNode}
                 onNodeSelect={(node) => setDetailId(node.id)}
+                keeperAccent={keeperAccent}
               />
             ) : (
               <div style={{ height: "100%", padding: 20 }}><ChamberFallback label="Chamber effects off — enable them above" /></div>
             )}
           </SceneErrorBoundary>
-        </div>
-      </Card>
-
-      {/* Briefing hero */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: "easeOut" }}>
-      <Card className="card-pad" style={{ marginBottom: 16 }}>
-        <p className="eyebrow">{dateFmt.format(new Date())} · Daily briefing</p>
-        <div className="row" style={{ alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-          <span className={profile.active_aura === "aura-blue" ? "aura-blue" : profile.active_aura === "aura-shadow" ? "aura-shadow" : undefined}>
-            <Avatar name={heroName} size="lg" frameGold={profile.active_aura === "frame-gold"} />
-          </span>
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <h1 className="display" style={{ fontSize: 30, margin: "0 0 4px" }}>{rank.rank}</h1>
-            <p className="muted small" style={{ margin: "0 0 12px" }}>
-              {heroName}{profile.active_title ? ` · ${profile.active_title}` : ""} · Level {profile.level}
-            </p>
-            <div className="row small" style={{ justifyContent: "space-between", marginBottom: 6 }}>
-              <span className="muted"><CountUp value={profile.xp} /> / <span className="num">{need}</span> XP</span>
-              <span className="muted"><span className="num">{need - profile.xp}</span> to level {profile.level + 1}</span>
+          <div className="hq-hud" aria-label="Player status">
+            <div className="hud-chip">
+              <p className="k">Keeper · Lv {profile.level}</p>
+              <p className="v">{rank.rank}</p>
             </div>
-            <Progress value={profile.xp} max={need} label="Experience to next level" />
-          </div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <div><p className="eyebrow" style={{ marginBottom: 2 }}>Streak</p><p className="display num" style={{ fontSize: 22, margin: 0 }}><Flame size={17} aria-hidden="true" style={{ verticalAlign: -3 }} /> <CountUp value={profile.streak} />d</p></div>
-            <div><p className="eyebrow" style={{ marginBottom: 2 }}>Coins</p><p className="display num" style={{ fontSize: 22, margin: 0, color: "var(--reward)" }}><Coins size={17} aria-hidden="true" style={{ verticalAlign: -3 }} /> <CountUp value={profile.coins} /></p></div>
+            <div className="hud-chip">
+              <p className="k">Experience</p>
+              <p className="v num"><CountUp value={profile.xp} /> <small className="muted" style={{ fontSize: 12 }}>/ {need} XP</small></p>
+            </div>
+            <div className="hud-chip">
+              <p className="k">Streak · Coins</p>
+              <p className="v num"><Flame size={16} aria-hidden="true" style={{ verticalAlign: -2, color: "var(--coral)" }} /> <CountUp value={profile.streak} />d · <Coins size={16} aria-hidden="true" style={{ verticalAlign: -2, color: "var(--gold)" }} /> <CountUp value={profile.coins} /></p>
+            </div>
           </div>
         </div>
-        <div className="row" style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)", flexWrap: "wrap", gap: 12 }}>
+      </LiquidGlassPanel>
+
+      {/* Briefing hero — Keeper identity on liquid glass */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: "easeOut" }}>
+      <LiquidGlassPanel className="glass-pad" style={{ marginBottom: 16 }}>
+        <p className="eyebrow">{dateFmt.format(new Date())} · Daily briefing</p>
+        <div className="keeper-badge" style={{ marginBottom: 16 }}>
+          <span className="keeper-orb" aria-hidden="true" style={{ background: `radial-gradient(circle at 34% 30%, #ffffff, ${keeperAccent} 34%, var(--jade) 60%, #0b3b32 100%)` }} />
+          <div style={{ minWidth: 0 }}>
+            <h1 className="display" style={{ fontSize: 26, margin: "0 0 2px" }}>{rank.rank}</h1>
+            <p className="muted small" style={{ margin: 0 }}>
+              {heroName}{profile.active_title ? ` · ${profile.active_title}` : ""} · Level {profile.level} · Atlas Keeper attuned
+            </p>
+          </div>
+        </div>
+        <StatGauge label="Experience to next level" value={profile.xp} max={need} display={<><CountUp value={profile.xp} /> / {need} XP · {need - profile.xp} to level {profile.level + 1}</>} color="linear-gradient(180deg,#ffe1a8,#f6b75f 60%,#b97a1f)" />
+        <div className="grid grid-2" style={{ marginTop: 6 }}>
+          <StatGauge label="Daily rhythm" value={Math.min(doneToday, dailyTarget)} max={dailyTarget} display={`${Math.min(doneToday, dailyTarget)} / ${dailyTarget} quests`} thin />
+          <StatGauge label="Treasury" value={Math.min(profile.coins, 500)} max={500} display={<><CountUp value={profile.coins} /> coins</>} color="linear-gradient(180deg,#8ff2dc,#2cbfa3 60%,#17876f)" thin />
+        </div>
+        <div className="row" style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--glass-edge)", flexWrap: "wrap", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             {current ? (
               <p className="small" style={{ margin: 0 }}><span className="muted">Current quest: </span><strong>{current.title}</strong> <span className="chip" style={{ marginLeft: 6 }}>{current.difficulty}-rank · +{DIFFICULTY[current.difficulty]?.xp} XP</span></p>
@@ -320,42 +335,42 @@ export default function Dashboard() {
               <p className="small muted" style={{ margin: 0 }}>No active quests. Create one to keep the streak alive.</p>
             )}
           </div>
-          <Link href="/quests" className="btn btn-primary"><Play aria-hidden="true" /> Begin today’s quest</Link>
+          <LiquidButton href="/quests" variant="jade"><Play aria-hidden="true" /> Begin today’s quest</LiquidButton>
         </div>
-      </Card>
+      </LiquidGlassPanel>
       </motion.div>
 
       <div className="dash">
         <div className="stack">
           {/* Active missions */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Active quests" action={<Link href="/quests" className="link">Manage all <ChevronRight size={13} aria-hidden="true" style={{ verticalAlign: -2 }} /></Link>} />
             {active.length === 0 ? (
               <EmptyState icon={<Target aria-hidden="true" />} title="Board is clear" body="No active quests. New quests appear here once created." action={<Link href="/quests" className="btn btn-sm"><Plus aria-hidden="true" /> New quest</Link>} />
             ) : (
-              <ul className="list-plain">
+              <div>
                 <AnimatePresence initial={false}>
                   {active.slice(0, 3).map((m) => (
-                    <motion.li key={m.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      <div className="check">
-                        <input type="checkbox" checked={false} disabled={completing === m.id} onChange={() => onComplete(m)} aria-label={`Complete ${m.title} for ${DIFFICULTY[m.difficulty]?.xp} XP`} />
-                        <div className="check-body">
-                          <strong>{m.title}</strong>
-                          <div className="check-meta">
-                            <span className="chip">{m.difficulty}-rank · +{DIFFICULTY[m.difficulty]?.xp} XP</span>
-                            <span className="chip">{m.category} → {ATTRIBUTE_MAP[m.category]}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.li>
+                    <motion.div key={m.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginBottom: 10 }}>
+                      <QuestCard
+                        title={m.title}
+                        busy={completing === m.id}
+                        checkLabel={`Complete ${m.title} for ${DIFFICULTY[m.difficulty]?.xp} XP`}
+                        onToggle={() => onComplete(m)}
+                        meta={[
+                          <span key="d" className="chip">{m.difficulty}-rank · +{DIFFICULTY[m.difficulty]?.xp} XP</span>,
+                          <span key="c" className="chip">{m.category} → {ATTRIBUTE_MAP[m.category]}</span>,
+                        ]}
+                      />
+                    </motion.div>
                   ))}
                 </AnimatePresence>
-              </ul>
+              </div>
             )}
-          </Card>
+          </LiquidGlassPanel>
 
           {/* Daily progress */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Daily progress" />
             {recoveryMode && doneToday < dailyTarget && (
               <div className="banner warn" style={{ marginBottom: 12 }}>
@@ -371,10 +386,10 @@ export default function Dashboard() {
             <p className="small muted" style={{ margin: "10px 0 0" }}>
               {doneToday >= dailyTarget ? "Target hit. Anything extra is bonus progress." : `${dailyTarget - doneToday} more to secure the day.`}
             </p>
-          </Card>
+          </LiquidGlassPanel>
 
           {/* Activity */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Recent activity" action={<Link href="/profile" className="link">Full history</Link>} />
             {feed.length === 0 ? (
               <EmptyState icon={<ListChecks aria-hidden="true" />} title="Nothing yet" body="Completed quests will show up here with their rewards." />
@@ -391,18 +406,18 @@ export default function Dashboard() {
                 ))}
               </ul>
             )}
-          </Card>
+          </LiquidGlassPanel>
         </div>
 
         <div className="stack">
           {/* Stats */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Attributes" action={<Link href="/profile" className="link">Details</Link>} />
             <RadarChart values={profile.attributes || {}} max={10} labels={ATTRIBUTE_NAMES} />
-          </Card>
+          </LiquidGlassPanel>
 
           {/* Skills */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Top skills" action={<Link href="/profile" className="link">All skills</Link>} />
             <ul className="list-plain small">
               {topSkills.map((s) => (
@@ -412,10 +427,10 @@ export default function Dashboard() {
                 </li>
               ))}
             </ul>
-          </Card>
+          </LiquidGlassPanel>
 
           {/* Achievements */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title={`Achievements · ${unlocked.length}/${achievements.length}`} action={<Link href="/profile" className="link">View all</Link>} />
             <ul className="list-plain small">
               {unlocked.slice(0, 2).map((a) => {
@@ -439,10 +454,10 @@ export default function Dashboard() {
               })}
               {unlocked.length === 0 && nextLocked.length === 0 && <li className="muted">No achievements defined.</li>}
             </ul>
-          </Card>
+          </LiquidGlassPanel>
 
           {/* Upcoming unlocks */}
-          <Card className="card-pad">
+          <LiquidGlassPanel className="glass-pad">
             <SectionHead title="Upcoming unlocks" action={<Link href="/shop" className="link">Open vault</Link>} />
             {upcoming.length === 0 ? (
               <p className="small muted" style={{ margin: 0 }}>Vault fully collected. New stock arrives after the event.</p>
@@ -460,7 +475,7 @@ export default function Dashboard() {
                 ))}
               </ul>
             )}
-          </Card>
+          </LiquidGlassPanel>
         </div>
       </div>
 
@@ -475,23 +490,23 @@ export default function Dashboard() {
         />
       )}
       {dialog?.kind === "penalty" && (
-        <Dialog
+        <LiquidModal
           title="Streak reset"
           onClose={() => setDialog(null)}
-          actions={<><button className="btn" onClick={() => setDialog(null)}>Understood</button><Link href="/quests" className="btn btn-primary" onClick={() => setDialog(null)}>Rebuild it today</Link></>}
+          actions={<><button className="lbtn" onClick={() => setDialog(null)}>Understood</button><Link href="/quests" className="lbtn lbtn-jade" onClick={() => setDialog(null)}>Rebuild it today</Link></>}
         >
           <p>You missed a day, so the streak restarted at 1 and 20 coins were deducted. Complete a quest today to start climbing again.</p>
-        </Dialog>
+        </LiquidModal>
       )}
       {detailMission && (
-        <Dialog
+        <LiquidModal
           title={detailMission.title}
           onClose={() => setDetailId(null)}
           actions={
             <>
-              <Link href="/quests" className="btn" onClick={() => setDetailId(null)}>Open in Quests</Link>
+              <Link href="/quests" className="lbtn lbtn-ghost" onClick={() => setDetailId(null)}>Open in Quests</Link>
               {detailMission.status === "active" && (
-                <button className="btn btn-primary" onClick={() => { setDetailId(null); onComplete(detailMission); }} autoFocus>
+                <button className="lbtn lbtn-jade" onClick={() => { setDetailId(null); onComplete(detailMission); }} autoFocus>
                   Complete quest · +{DIFFICULTY[detailMission.difficulty]?.xp} XP
                 </button>
               )}
@@ -505,9 +520,9 @@ export default function Dashboard() {
             <span className="chip">{questStatus(detailMission) === "completed" ? "Completed" : questStatus(detailMission) === "overdue" ? "Overdue" : questStatus(detailMission) === "scheduled" ? "Scheduled" : "Active"}{detailMission.due_date ? ` · Due ${detailMission.due_date}` : ""}</span>
           </p>
           <p>Earns <strong className="num">+{DIFFICULTY[detailMission.difficulty]?.xp} XP</strong> and <strong className="num">+{DIFFICULTY[detailMission.difficulty]?.coins} coins</strong>, training {ATTRIBUTE_MAP[detailMission.category]}.</p>
-        </Dialog>
+        </LiquidModal>
       )}
-      {toast && <Toast icon={<CircleCheck aria-hidden="true" />}>{toast}</Toast>}
+      {toast && <RewardToast icon={<CircleCheck aria-hidden="true" />}>{toast}</RewardToast>}
     </AppShell>
   );
 }

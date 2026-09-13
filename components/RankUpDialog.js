@@ -55,7 +55,7 @@ export default function RankUpDialog({ level, rankName, rankColor, reward, attr,
           })}
         </ul>
         <div className="dialog-actions" style={{ justifyContent: "center" }}>
-          <button className="btn btn-reward" onClick={onClose} autoFocus>Continue training</button>
+          <button className="lbtn lbtn-gold" onClick={onClose} autoFocus>Continue training</button>
         </div>
       </motion.div>
     </div>
